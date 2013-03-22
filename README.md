@@ -5,6 +5,6 @@ Usage
 
 ```
   ./broker &
-  ./pub AA --broker &
-  ./sub AA --broker &
+  ./pub <topic> --broker &
+  ./sub <topic> --broker &
 ```
