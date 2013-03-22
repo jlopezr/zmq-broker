@@ -11,9 +11,6 @@ int main (void)
     void *backend = zsocket_new (context, ZMQ_XPUB);
     zsocket_bind (backend, "tcp://*:5558");
 
-    //  Subscribe to every single topic from publisher
-    zsocket_set_subscribe (frontend, "");
-
     //  Store last instance of each topic in a cache
     zhash_t *cache = zhash_new ();
 
@@ -27,7 +24,6 @@ int main (void)
             { frontend, 0, ZMQ_POLLIN, 0 },
             { backend,  0, ZMQ_POLLIN, 0 }
         };
-        //if (zmq_poll (items, 2, 1000 * ZMQ_POLL_MSEC) <= 0)
         if (zmq_poll (items, 2, -1) <= 0)
             break;              //  Interrupted(-1) or no event signaled (0)
 
@@ -40,16 +36,8 @@ int main (void)
             char *current = zstr_recv (frontend);
             if (!topic)
                 break;
-	    printf("%s = %s \r\n", topic, current);
+	    printf("%s : %s \r\n", topic, current);
 
-            /*
-	    char *previous = zhash_lookup (cache, topic);
-            if (previous) {
-                zhash_delete (cache, topic);
-                free (previous);
-            }
-            zhash_insert (cache, topic, current);
-            */
 	    zstr_sendm (backend, topic);
             zstr_send (backend, current);
             free (topic);
@@ -66,16 +54,30 @@ int main (void)
             char *topic = zmalloc (zframe_size (frame));
             memcpy (topic, event + 1, zframe_size (frame) - 1);
             printf ("Topic is %s\n", topic);
-            /*
-	    if (event [0] == 1) {
-                printf ("Sending cached topic %s\n", topic);
-                char *previous = zhash_lookup (cache, topic);
-                if (previous) {
-                    zstr_sendm (backend, topic);
-                    zstr_send (backend, previous);
-                }
+	    if (event [0] == 0) {
+                int *previous = zhash_lookup (cache, topic);
+                printf ("Unsubscribing topic %s\r\n", topic);
+		if(previous!=0) {
+		   (*previous)--;
+		    if ((*previous) == 0) {
+    		        zsocket_set_unsubscribe (frontend, topic);
+			zhash_delete(cache, topic);
+			free(previous);
+		    }
+		}
             }
-	    */
+	    if (event [0] == 1) {
+                printf ("Subscribing topic %s\r\n", topic);
+                int *previous = zhash_lookup (cache, topic);
+		if (!previous) {
+		    int *counter = malloc(sizeof(int));
+		    *counter= 1;
+                    zhash_insert (cache, topic, counter);
+    		    zsocket_set_subscribe (frontend, topic);
+                } else {
+                    (*previous)++;			
+		}
+            }
 	    free(topic);
             zframe_destroy (&frame);
         }
