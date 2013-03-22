@@ -11,9 +11,6 @@ int main (void)
     void *backend = zsocket_new (context, ZMQ_XPUB);
     zsocket_bind (backend, "tcp://*:5558");
 
-    //  Store last instance of each topic in a cache
-    zhash_t *cache = zhash_new ();
-
     //  .split main poll loop
     //  We route topic updates from frontend to backend, and
     //  we handle subscriptions by sending whatever we cached,
@@ -55,38 +52,17 @@ int main (void)
             memcpy (topic, event + 1, zframe_size (frame) - 1);
             printf ("Topic is %s\n", topic);
 	    if (event [0] == 0) {
-                int *numSubscribers = zhash_lookup (cache, topic);
                 printf ("Unsubscribing topic %s\r\n", topic);
-		if(numSubscribers!=0) {
-		    (*numSubscribers)--;
-		    if ((*numSubscribers) == 0) {
-    		        printf("** Last subscriber...\r\n");
-			zsocket_set_unsubscribe (frontend, topic);
-			zhash_delete(cache, topic);
-			free(numSubscribers);
-		    }
-		}
-		printf("** Number of subscribers: %d\r\n",*numSubscribers);
-            }
+		zsocket_set_unsubscribe (frontend, topic);
+	    }
 	    if (event [0] == 1) {
                 printf ("Subscribing topic %s\r\n", topic);
-                int *numSubscribers= zhash_lookup (cache, topic);
-		if (!numSubscribers) {
-    		    printf("** First subscriber...\r\n");
-		    numSubscribers = malloc(sizeof(int));
-		    *numSubscribers= 1;
-                    zhash_insert (cache, topic, numSubscribers);
-    		    zsocket_set_subscribe (frontend, topic);
-                } else {
-                    (*numSubscribers)++;
-		}
-		printf("** Number of subscribers: %d\r\n",*numSubscribers);
+		zsocket_set_subscribe (frontend, topic);
             }
 	    free(topic);
             zframe_destroy (&frame);
         }
     } 
     zctx_destroy (&context);
-    zhash_destroy (&cache);
     return 0;
 }
