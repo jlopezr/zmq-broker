@@ -55,28 +55,32 @@ int main (void)
             memcpy (topic, event + 1, zframe_size (frame) - 1);
             printf ("Topic is %s\n", topic);
 	    if (event [0] == 0) {
-                int *previous = zhash_lookup (cache, topic);
+                int *numSubscribers = zhash_lookup (cache, topic);
                 printf ("Unsubscribing topic %s\r\n", topic);
-		if(previous!=0) {
-		   (*previous)--;
-		    if ((*previous) == 0) {
-    		        zsocket_set_unsubscribe (frontend, topic);
+		if(numSubscribers!=0) {
+		    (*numSubscribers)--;
+		    if ((*numSubscribers) == 0) {
+    		        printf("** Last subscriber...\r\n");
+			zsocket_set_unsubscribe (frontend, topic);
 			zhash_delete(cache, topic);
-			free(previous);
+			free(numSubscribers);
 		    }
 		}
+		printf("** Number of subscribers: %d\r\n",*numSubscribers);
             }
 	    if (event [0] == 1) {
                 printf ("Subscribing topic %s\r\n", topic);
-                int *previous = zhash_lookup (cache, topic);
-		if (!previous) {
-		    int *counter = malloc(sizeof(int));
-		    *counter= 1;
-                    zhash_insert (cache, topic, counter);
+                int *numSubscribers= zhash_lookup (cache, topic);
+		if (!numSubscribers) {
+    		    printf("** First subscriber...\r\n");
+		    numSubscribers = malloc(sizeof(int));
+		    *numSubscribers= 1;
+                    zhash_insert (cache, topic, numSubscribers);
     		    zsocket_set_subscribe (frontend, topic);
                 } else {
-                    (*previous)++;			
+                    (*numSubscribers)++;
 		}
+		printf("** Number of subscribers: %d\r\n",*numSubscribers);
             }
 	    free(topic);
             zframe_destroy (&frame);
