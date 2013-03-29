@@ -18,7 +18,8 @@ int main (int argc, char *argv [])
         zsocket_connect (subscriber, "ipc://backend");
     } else if (strcmp(argv[2], "--local") == 0) {
 	printf("Connecting to epgm://239.192.1.1:5555 (LOCAL)\r\n");
-        zsocket_bind (subscriber, "epgm://239.192.1.1:5555");
+        int rc = zsocket_connect(subscriber, "epgm://10.1.57.204;239.192.1.1:5555");
+    	assert(rc==0);
     } else {
 	printf("Connecting to %s\r\n", argv[2]);
         zsocket_connect (subscriber, argv[2]);

@@ -17,7 +17,8 @@ int main (int argc, char *argv [])
 
     } else if(strcmp(argv[2], "--local") == 0) {
 	printf("Connecting to epgm://239.192.1.1:5555 (LOCAL)\r\n");
-	zsocket_connect (publisher, "epgm://239.192.1.1:5555");
+	int rc = zsocket_bind(publisher, "epgm://en1;239.192.1.1:5555");
+    	assert(rc==0);
     } else {
 	printf("Connecting to %s\r\n", argv[2]);
 	zsocket_connect (publisher, argv[2]);

@@ -28,10 +28,11 @@ int main (int argc, char *argv [])
 
     //  Send one random update per second
     srandom ((unsigned) time (NULL));
+    int i = 0;
     while (!zctx_interrupted) {
         sleep (1);
-        zstr_sendm (publisher, argv[1], ZMQ_SNDMORE); //TODO is ZMQ_SNDMORE needed?
-        zstr_send (publisher, "VALUE = %03d", randof(1000));
+        zstr_sendm (publisher, argv[1]); //TODO is ZMQ_SNDMORE needed?
+        zstr_send (publisher, "VALUE A1 = %03d", i++);
     }
     zctx_destroy (&context);
     return 0;
