@@ -7,8 +7,14 @@ Compile
   mkdir build
   cd build
   cmake .. -G "Unix Makefiles"
-  cd ..
   make
+```
+or if you prefer to use ninja
+```
+  mkdir build
+  cd build
+  cmake .. -G "Ninja"
+  ninja
 ```
 
 
