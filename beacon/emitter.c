@@ -15,9 +15,6 @@ int main(void) {
     zbeacon_set_interval (service_beacon, 100);
     zbeacon_publish (service_beacon, announcement, 2);
 
-    //  Wait for at most 1/2 second if there's no broadcast networking
-    zsocket_set_rcvtimeo (zbeacon_pipe (client_beacon), 500);
-
     while (!zctx_interrupted) {
         sleep (1);
     }
