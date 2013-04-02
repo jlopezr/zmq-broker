@@ -62,7 +62,7 @@ int main(void) {
 	    zhash_update(services_found, service_name, tmp); 
            
 	    if(zhash_size(services_found)>num_items) {
-                printf("Service %s has been discovered\r\n", service_name); 
+                printf("Service %s has been discovered at %s port %d\r\n", service_name, ipaddress, received_port); 
             } 
 
 	    zframe_destroy (&content);
