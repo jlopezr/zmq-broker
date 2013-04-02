@@ -1,14 +1,20 @@
 #include <czmq.h>
+#include "constants.h"
 
 int process_services(const char *key, void *item, void *argument) {
     //  si el tiempo_actual > tiempo_guardado+3*TIMEOUT
     //     lo elimino de la tabla
     //     aviso de que ya no esta detectado
 
-    int* tmp = (int*)item;	
-   
-    printf("TIME %ld \r\n",*((long*)argument)); 
-    printf("KEY %s => %d\r\n", key, *tmp);
+    long* value = (long*)item;
+    long* time = (long*)argument;
+
+    if(*time>*value+(BEACON_INTERVAL*BEACON_MISSED)) {
+        printf("TIMEOUT!!!!!!!!!!!!!!!!!!!!!!!\r\n");
+    }
+
+    printf("TIME %ld \r\n", *time); 
+    printf("KEY %s => %ld\r\n", key, *value);
 
     return 0;
 }
@@ -26,7 +32,7 @@ int main(void) {
     zbeacon_subscribe (client_beacon, NULL, 0);
 
     //  Wait for at most 1/2 second if there's no broadcast networking
-    zsocket_set_rcvtimeo (zbeacon_pipe (client_beacon), 500);
+    zsocket_set_rcvtimeo (zbeacon_pipe (client_beacon), BEACON_TIMEOUT);
 
     while(!zctx_interrupted) {
 
@@ -38,16 +44,17 @@ int main(void) {
             zframe_t *content = zframe_recv (zbeacon_pipe (client_beacon));
             int received_port = (zframe_data (content) [0] << 8)
                                 +  zframe_data (content) [1];
+	    char* service_name = ((char*)content)+2; 
             printf("IP   DETECTED %s\r\n", ipaddress);
             printf("PORT DETECTED %d\r\n", received_port);
-            printf("SVC  DETECTED %s\r\n", &(((char*)content)[2]) );
+            printf("SVC  DETECTED %s\r\n", service_name);
  
             //  si ya existe actualizo su tiempo
 	    //  sino la añado
-            int* tmp = malloc(sizeof(int));
-	    *tmp = received_port;
+            long* tmp = malloc(sizeof(long));
+	    *tmp = zclock_time();
 	    
-	    zhash_update(services_found, ipaddress, tmp); 
+	    zhash_update(services_found, service_name, tmp); 
             
 	    zframe_destroy (&content);
             free (ipaddress);

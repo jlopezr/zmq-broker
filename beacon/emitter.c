@@ -1,4 +1,5 @@
 #include <czmq.h>
+#include "constants.h"
 
 int main(int argc, char** argv) {
 
@@ -28,7 +29,7 @@ int main(int argc, char** argv) {
     strcpy((char*)&(frame[2]),service_name);
 
     zbeacon_t *service_beacon = zbeacon_new (9999);
-    zbeacon_set_interval (service_beacon, 100);
+    zbeacon_set_interval (service_beacon, BEACON_INTERVAL);
     zbeacon_publish (service_beacon, frame, len);
 
     while (!zctx_interrupted) {
