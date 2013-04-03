@@ -9,6 +9,11 @@ struct mz_msg_t {
     int data_len;
 };
 
+mz_msg_t* mz_msg_new();
+void mz_msg_destroy(mz_msg_t** msg);
+void mz_msg_str(mz_msg_t* msg, const char* data);
+mz_msg_t* mz_msg_dup(mz_msg_t* msg)
+
 mz_ctx_t* mz_ctx_new();
 void mz_ctx_destroy(mz_ctx_t** ctx);
 

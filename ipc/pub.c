@@ -30,7 +30,7 @@ int main (int argc, char *argv [])
     //  Send one random update per second
     srandom ((unsigned) time (NULL));
     int i = 0;
-    while (!zctx_interrupted && i<10) {
+    while (!zctx_interrupted) {
         sleep (1);
         zstr_sendm (publisher, argv[1]);
         int n = randof(1000);
@@ -40,9 +40,6 @@ int main (int argc, char *argv [])
     }
 
     zsocket_destroy (context, publisher);
-    printf("SOCKET DESTRUIDO\r\n");
-    sleep(100);
-
     zctx_destroy (&context);
     return 0;
 }
