@@ -18,6 +18,11 @@ int main (int argc, char *argv [])
 
     start_discovery(NULL);
 
+
+    while(true) {
+       sleep(1);
+    }
+
     char* location = NULL;
     //TODO Get the location
 
