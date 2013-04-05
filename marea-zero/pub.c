@@ -27,6 +27,7 @@ int main (int argc, char *argv [])
 	free(url);
     } else {
         printf("option %s not understood\r\n", argv[2]);
+	return -1;
     }
 
     //  Ensure subscriber connection has time to complete

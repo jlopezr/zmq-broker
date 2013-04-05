@@ -1,6 +1,8 @@
 #include <czmq.h>
 #include "constants.h"
 
+
+//TODO this should be in mz_ctx
 zhash_t* services_found;
 
 int process_services(const char *key, void *item, void *argument) {
@@ -19,18 +21,16 @@ int process_services(const char *key, void *item, void *argument) {
 	zhash_delete(services_found, key);
     }
 
-
     return 0;
 }
 
-
-int main(void) {
+void* discovery(void* args) {
     static long now = 0;
 
-    //  Basic test: create a service and announce it
-    zctx_t *ctx = zctx_new ();
-    services_found = zhash_new(); 
-    
+    assert(services_found != 0);
+
+    zctx_t* ctx = zctx_new();
+
     //  Create beacon to lookup service
     zbeacon_t *client_beacon = zbeacon_new (9999);
     zbeacon_subscribe (client_beacon, NULL, 0);
@@ -73,9 +73,18 @@ int main(void) {
 	now = zclock_time();
         zhash_foreach (services_found, process_services, &now);
     }
-    
     zbeacon_destroy (&client_beacon);
-    zctx_destroy (&ctx);
+    zhash_destroy(&services_found);
+    zctx_destroy(&ctx);
 
-    return 0;
+    return NULL;
+}
+
+void start_discovery(zctx_t* ctx) {
+    services_found = zhash_new(); 
+    zthread_new(discovery, NULL);
+}
+
+void stop_discovery(zctx_t* ctx) {
+    //TODO Should call zctx_destroy();
 }
