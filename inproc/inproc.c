@@ -9,13 +9,11 @@ static void client(void* args, zctx_t *context, void* pipe) {
    
     int request_nbr=0; 
     while(!zctx_interrupted) {
-        printf("CLIENT *0*\r\n");
-	zstr_send(client, "HOLA");
-        printf("CLIENT *1*\r\n");
+	zstr_send(client, args);
         char* data = zstr_recv(client);
+	assert(strcmp(args,data)==0);
 	printf("CLIENT RESULT: %s\r\n",data);	
     }
-    //zsocket_destroy(context, client);
 }
 
 static void server(void* args, zctx_t* context, void* pipe) {
@@ -25,30 +23,25 @@ static void server(void* args, zctx_t* context, void* pipe) {
     zsocket_bind (sink, "inproc://example");
 
     while(!zctx_interrupted) {
-        printf("SERVER *0*\r\n");
-
         char* data = zstr_recv(sink);
         if(data==NULL) {
+	     printf("NO MESSAGE RECEIVED\r\n");
 	     sleep(1);
              continue;
 	}
-	printf("SERVER *1*\r\n");
 	zstr_send(sink, data);
-        printf("SERVER *2*\r\n");
     }
-    //zsocket_destroy(context, server);
 }
 
 int main (void)
 {
-    printf("STARTING\r\n");
     zctx_t* context = zctx_new();
     assert(context!=0);
-    printf("STARTED\r\n");
     
     zthread_fork (context, server, NULL);
     sleep(1);
-    zthread_fork (context, client, NULL);
+    zthread_fork (context, client, "A");
+    zthread_fork (context, client, "B");
 
     while(!zctx_interrupted) {
        sleep(1);
