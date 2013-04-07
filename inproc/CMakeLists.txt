@@ -9,6 +9,6 @@ target_link_libraries(inproc ${ZEROMQ_LIBRARIES})
 target_link_libraries(inproc ${CZEROMQ_LIBRARIES})
 
 
-add_executable(threads threads.c)
-target_link_libraries(threads ${ZEROMQ_LIBRARIES})
-target_link_libraries(threads ${CZEROMQ_LIBRARIES})
+add_executable(inproc2 inproc2.c)
+target_link_libraries(inproc2 ${ZEROMQ_LIBRARIES})
+target_link_libraries(inproc2 ${CZEROMQ_LIBRARIES})
