@@ -16,34 +16,34 @@ int main (int argc, char *argv [])
        return -1;
     }
 
-    start_discovery(NULL);
+    start_discovery(context);
+    sleep(5); 
 
-
-    while(true) {
-       sleep(1);
-    }
-
-    char* location = NULL;
-    //TODO Get the location
-
+    char* location = discover(context, argv[1]);
+    assert(location!=NULL);
+    
     printf("Connecting to %s\r\n", location);
+
+    sleep(-1);
+
     zsocket_connect (subscriber, location);
     printf("Subscribed to %s\r\n",argv[1]);
     zsocket_set_subscribe (subscriber, argv[1]);
     
-    while (true) {
+    while (!zctx_interrupted) {
         char *topic = zstr_recv (subscriber);
         if (!topic)
             break;
         char *data = zstr_recv (subscriber);
-        //assert (streq (topic, argv[1]));
         puts (data);
         free (topic);
         free (data);
     }
     
-    stop_discovery(NULL);
+    printf("DESTROYING CTX\r\n");
+    stop_discovery(context);
     zctx_destroy (&context);
+    printf("CTX DESTROYED\r\n");
     
     return 0;
 }

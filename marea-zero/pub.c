@@ -12,9 +12,9 @@ int main (int argc, char *argv [])
     void *publisher = zsocket_new (context, ZMQ_PUB);
     int port_nbr = 0;
 
-    if (argc < 2) {
+    if (argc < 3) {
        printf("usage: %s <subscription> --ipc|--tcp\r\n", argv[0]);
-       return 1;
+       return -1;
     }
     if (strcmp(argv[2], "--tcp") == 0) {
         port_nbr = zsocket_bind (publisher, "tcp://*:*");
