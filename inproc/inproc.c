@@ -21,17 +21,19 @@ static void client(void* args, zctx_t *context, void* pipe) {
 static void server(void* args, zctx_t* context, void* pipe) {
     assert(context!=0);
 
-    void *sink = zmq_socket (context, ZMQ_REP);
-    zmq_bind (sink, "inproc://example");
+    void *sink = zsocket_new (context, ZMQ_REP);
+    zsocket_bind (sink, "inproc://example");
 
     while(!zctx_interrupted) {
         printf("SERVER *0*\r\n");
-	char* data = zstr_recv(server);
+
+        char* data = zstr_recv(sink);
         if(data==NULL) {
+	     sleep(1);
              continue;
 	}
 	printf("SERVER *1*\r\n");
-	zstr_send(server, data);
+	zstr_send(sink, data);
         printf("SERVER *2*\r\n");
     }
     //zsocket_destroy(context, server);
