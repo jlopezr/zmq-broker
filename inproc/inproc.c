@@ -12,7 +12,8 @@ static void client(void* args, zctx_t *context, void* pipe) {
 	zstr_send(client, args);
         char* data = zstr_recv(client);
 	assert(strcmp(args,data)==0);
-	printf("CLIENT RESULT: %s\r\n",data);	
+	printf("CLIENT RESULT: %s\r\n",data);
+	free(data);
     }
 }
 
@@ -30,6 +31,7 @@ static void server(void* args, zctx_t* context, void* pipe) {
              continue;
 	}
 	zstr_send(sink, data);
+        free(data);
     }
 }
 
