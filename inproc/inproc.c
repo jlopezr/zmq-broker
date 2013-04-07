@@ -1,41 +1,55 @@
 #include <czmq.h>
 
-void* client(void* args) {
-    void* context = args;
+static void client(void* args, zctx_t *context, void* pipe) {
+    assert(context!=0);
 
-    void *client = zmq_socket (context, ZMQ_REQ);
-    zmq_setsockopt (client, ZMQ_IDENTITY, "client", 6); //Optional
-    zmq_connect (client, "inproc://example");
-    
+    void *client = zsocket_new (context, ZMQ_REQ);
+    //zsocket_set_identity(client, "client"); 
+    zsocket_connect (client, "inproc://example");
+   
+    int request_nbr=0; 
     while(!zctx_interrupted) {
-        printf("c");
-	sleep(1);
+        printf("CLIENT *0*\r\n");
+	zstr_send(client, "HOLA");
+        printf("CLIENT *1*\r\n");
+        char* data = zstr_recv(client);
+	printf("CLIENT RESULT: %s\r\n",data);	
     }
-    zmq_close(client);
-    return NULL;
+    //zsocket_destroy(context, client);
 }
 
-void* server(void* args) {
-    void* context = args;
-    void *sink = zmq_socket (context, ZMQ_ROUTER);
+static void server(void* args, zctx_t* context, void* pipe) {
+    assert(context!=0);
+
+    void *sink = zmq_socket (context, ZMQ_REP);
     zmq_bind (sink, "inproc://example");
 
     while(!zctx_interrupted) {
-        printf("s");
-	sleep(1);
+        printf("SERVER *0*\r\n");
+	char* data = zstr_recv(server);
+	assert(data);
+        printf("SERVER *1*\r\n");
+	zstr_send(server, data);
+        printf("SERVER *2*\r\n");
     }
-    zmq_close(sink);
-    return NULL;
+    //zsocket_destroy(context, server);
 }
 
-int main (void) 
+int main (void)
 {
-    void *context = zmq_ctx_new ();
+    printf("STARTING\r\n");
+    zctx_t* context = zctx_new();
+    assert(context!=0);
+    printf("STARTED\r\n");
+    
+    zthread_fork (context, server, NULL);
+    sleep(1);
+    zthread_fork (context, client, NULL);
 
-    zthread_new(client, context);
-    zthread_new(server, context);
+    while(!zctx_interrupted) {
+       sleep(1);
+    }
 
-    sleep(5);
     printf("DESTROYING CTX\r\n");
     zmq_ctx_destroy (&context);
     printf("CTX DESTROYED\r\n");
