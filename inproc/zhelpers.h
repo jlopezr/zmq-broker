@@ -51,7 +51,7 @@ static char *
 s_recv (void *socket) {
     zmq_msg_t message;
     zmq_msg_init (&message);
-    if (zmq_recv (socket, &message, 0))
+    if (zmq_recvmsg (socket, &message, 0))
         exit (1);           //  Context terminated, exit
 
     int size = zmq_msg_size (&message);
@@ -69,8 +69,8 @@ s_send (void *socket, char *string) {
     zmq_msg_t message;
     zmq_msg_init_size (&message, strlen (string));
     memcpy (zmq_msg_data (&message), string, strlen (string));
-    rc = zmq_send (socket, &message, 0);
-    assert (!rc);
+    rc = zmq_sendmsg (socket, &message, 0);
+    assert (rc!=-1);
     zmq_msg_close (&message);
     return (rc);
 }
@@ -82,9 +82,9 @@ s_sendmore (void *socket, char *string) {
     zmq_msg_t message;
     zmq_msg_init_size (&message, strlen (string));
     memcpy (zmq_msg_data (&message), string, strlen (string));
-    rc = zmq_send (socket, &message, ZMQ_SNDMORE);
+    rc = zmq_sendmsg (socket, &message, ZMQ_SNDMORE);
     zmq_msg_close (&message);
-    assert (!rc);
+    assert (rc!=-1);
     return (rc);
 }
 
@@ -98,7 +98,7 @@ s_dump (void *socket)
         //  Process all parts of the message
         zmq_msg_t message;
         zmq_msg_init (&message);
-        zmq_recv (socket, &message, 0);
+        zmq_recvmsg (socket, &message, 0);
 
         //  Dump the message as text or binary
         char *data = zmq_msg_data (&message);

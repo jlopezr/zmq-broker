@@ -27,8 +27,10 @@ static void server(void* args, zctx_t* context, void* pipe) {
     while(!zctx_interrupted) {
         printf("SERVER *0*\r\n");
 	char* data = zstr_recv(server);
-	assert(data);
-        printf("SERVER *1*\r\n");
+        if(data==NULL) {
+             continue;
+	}
+	printf("SERVER *1*\r\n");
 	zstr_send(server, data);
         printf("SERVER *2*\r\n");
     }
