@@ -17,15 +17,12 @@ int main (int argc, char *argv [])
     }
 
     start_discovery(context);
-    sleep(5); 
+    sleep(1); 
 
     char* location = discover(context, argv[1]);
     assert(location!=NULL);
     
     printf("Connecting to %s\r\n", location);
-
-    sleep(-1);
-
     zsocket_connect (subscriber, location);
     printf("Subscribed to %s\r\n",argv[1]);
     zsocket_set_subscribe (subscriber, argv[1]);

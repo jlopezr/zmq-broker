@@ -5,12 +5,46 @@
 //TODO this should be in mz_ctx
 zhash_t* services_found;
 
+typedef struct discover_service_t {
+   long time;
+   char* url;
+} discover_service_t; 
+
 char* discover(zctx_t* context, const char* key) {
     void *client = zsocket_new (context, ZMQ_REQ);
     zsocket_connect (client, "inproc://discovery");
     zstr_sendm(client, "GET");
     zstr_send(client, key);
     return zstr_recv(client);
+}
+
+void free_discover_service_fn(void *data) {
+   discover_service_t* svc = (discover_service_t*)data;
+   if(svc->url!=NULL) {
+       free(svc->url);
+   }
+}
+
+void update_service(char* service_name, discover_service_t* svc) {
+   discover_service_t* current = zhash_lookup(services_found, service_name);
+
+   if(current==NULL) {
+        zhash_insert(services_found, service_name, svc);
+        printf("Service %s has been discovered at %s\r\n", 
+		    service_name, svc->url );
+   } else {
+	int lookup = strcmp(svc->url, current->url);
+        if(lookup==0) {
+            current->time = svc->time;	
+	} else if(lookup<0) {
+            zhash_update(services_found, service_name, svc);
+            printf("Service %s has been discovered at %s (old was %s)\r\n", 
+		    service_name, svc->url, current->url );
+        } else { // lookup > 0
+            printf("Service %s has been detected at %s, but %s is kept\r\n", 
+		    service_name, svc->url, current->url );
+	}
+   }
 }
 
 int process_services(const char *key, void *item, void *argument) {
@@ -62,7 +96,12 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
 	    char* result;
 	    printf("SERVER FUNC: %s\r\n", func);
 	    if(strcmp(func,"GET")==0) {
-		result = zhash_lookup(services_found, data);
+		discover_service_t* svc = zhash_lookup(services_found, data);
+		if(svc!=NULL) {
+		   result = svc->url;
+		} else {
+	           result = NULL;
+		}   
             } else if(strcmp(func,"QUIT")==0) {
                 result = "OK";
 	    } else {
@@ -95,12 +134,11 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
                 *tmp = zclock_time();
                 int num_items = zhash_size(services_found);
 
-                zhash_update(services_found, service_name, tmp);
+		discover_service_t* svc = malloc(sizeof(discover_service_t));
+		svc->time = zclock_time();
+		asprintf(&(svc->url),"tcp://%s:%d", ipaddress, received_port);
 
-                if(zhash_size(services_found)>num_items) {
-                    printf("Service %s has been discovered at %s port %d\r\n", 
-				    service_name, ipaddress, received_port);
-                }
+                update_service(service_name, svc);
 
                 zframe_destroy (&content);
                 free (ipaddress);
