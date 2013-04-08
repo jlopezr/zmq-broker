@@ -17,16 +17,23 @@ int main (int argc, char *argv [])
     }
 
     start_discovery(context);
-    sleep(1); 
-
-    char* location = discover(context, argv[1]);
-    assert(location!=NULL);
+    char* location = NULL;
     
+    do {
+        printf("Discovering %s ...\r\n",argv[1]);
+        sleep(1);
+	location = discover(context, argv[1]);
+    } while(*location==0);
+
     printf("Connecting to %s\r\n", location);
     zsocket_connect (subscriber, location);
     printf("Subscribed to %s\r\n",argv[1]);
     zsocket_set_subscribe (subscriber, argv[1]);
-    
+   
+    void* svc_changes = zsocket_new(context, ZMQ_SUB);
+    zsocket_connect (svc_changes, "inproc://discovery-changes");
+    zsocket_set_subscribe (svc_changes, argv[1]); 
+
     while (!zctx_interrupted) {
         char *topic = zstr_recv (subscriber);
         if (!topic)

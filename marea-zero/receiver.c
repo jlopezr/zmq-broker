@@ -4,6 +4,7 @@
 
 //TODO this should be in mz_ctx
 zhash_t* services_found;
+void *svc_changes;
 
 typedef struct discover_service_t {
    long time;
@@ -32,6 +33,8 @@ void update_service(char* service_name, discover_service_t* svc) {
         zhash_insert(services_found, service_name, svc);
         printf("Service %s has been discovered at %s\r\n", 
 		    service_name, svc->url );
+	zstr_sendm(svc_changes, service_name);
+	zstr_send(svc_changes, svc->url);
    } else {
 	int lookup = strcmp(svc->url, current->url);
         if(lookup==0) {
@@ -40,7 +43,9 @@ void update_service(char* service_name, discover_service_t* svc) {
             zhash_update(services_found, service_name, svc);
             printf("Service %s has been discovered at %s (old was %s)\r\n", 
 		    service_name, svc->url, current->url );
-        } else { // lookup > 0
+	    zstr_sendm(svc_changes, service_name);
+	    zstr_send(svc_changes, svc->url);
+	} else { // lookup > 0
             printf("Service %s has been detected at %s, but %s is kept\r\n", 
 		    service_name, svc->url, current->url );
 	}
@@ -61,6 +66,8 @@ int process_services(const char *key, void *item, void *argument) {
     if(*time>*value+(BEACON_INTERVAL*BEACON_MISSED)) {
         printf("Service %s has dissapeared\r\n", key);
         zhash_delete(services_found, key);
+	zstr_sendm(svc_changes, key);
+	zstr_send(svc_changes, "");
     }
 
     return 0;
@@ -77,6 +84,9 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
 
     void *sink = zsocket_new (ctx, ZMQ_REP);
     zsocket_bind (sink, "inproc://discovery");
+
+    svc_changes = zsocket_new (ctx, ZMQ_PUB);
+    zsocket_bind (svc_changes, "inproc://discovery-changes");
 
     zmq_pollitem_t items[] = {
         { sink, 0, ZMQ_POLLIN, 0 },
@@ -100,7 +110,7 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
 		if(svc!=NULL) {
 		   result = svc->url;
 		} else {
-	           result = NULL;
+	           result = "";
 		}   
             } else if(strcmp(func,"QUIT")==0) {
                 result = "OK";
