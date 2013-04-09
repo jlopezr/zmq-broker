@@ -45,10 +45,13 @@ void update_service(char* service_name, discover_service_t* svc) {
 		    service_name, svc->url, current->url );
 	    zstr_sendm(svc_changes, service_name);
 	    zstr_send(svc_changes, svc->url);
-	} else { // lookup > 0
+	} 
+	/* 
+	  else { // lookup > 0
             printf("Service %s has been detected at %s, but %s is kept\r\n", 
 		    service_name, svc->url, current->url );
-	}
+	} 
+	*/
    }
 }
 
@@ -104,7 +107,7 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
             char* func= zstr_recv(sink);
             char* data = zstr_recv(sink);
 	    char* result;
-	    printf("SERVER FUNC: %s\r\n", func);
+	    //printf("SERVER FUNC: %s\r\n", func);
 	    if(strcmp(func,"GET")==0) {
 		discover_service_t* svc = zhash_lookup(services_found, data);
 		if(svc!=NULL) {
