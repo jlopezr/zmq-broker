@@ -16,7 +16,9 @@ char* discover(zctx_t* context, const char* key) {
     zsocket_connect (client, "inproc://discovery");
     zstr_sendm(client, "GET");
     zstr_send(client, key);
-    return zstr_recv(client);
+    char* result = zstr_recv(client);
+    zsocket_destroy(context, &client);
+    return result;
 }
 
 void free_discover_service_fn(void *data) {
