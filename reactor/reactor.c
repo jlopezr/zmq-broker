@@ -18,10 +18,22 @@ void mz_reactor_destroy(mz_reactor_t** rct) {
     rct = NULL;	
 }
 
+int key_A_fn(char* key, char* data) {
+   printf("KEY A => %s => %s\r\n", key, data);
+   return 0;
+}
+
+int key_B_fn(char* key, char* data) {
+   printf("KEY B => %s => %s\r\n", key, data);
+   return 0;
+}
+
 int mz_reactor_event(mz_reactor_t* rct, char* key, char* data) {
-    mz_reactor_fn* fn = (mz_reactor_fn*)zhash_lookup(rct->events, key);
+    mz_reactor_fn fn = (mz_reactor_fn)zhash_lookup(rct->events, key);
+    printf("LOOKUP %p \r\n", fn);
+    printf("FUNCT. %p \r\n", key_A_fn);
     if(fn!=NULL) {
-	return (*fn)(key, data);
+	return fn(key, data);
     } else {
 	assert(0 && "Key not found in events");
     }
@@ -38,16 +50,6 @@ void mz_reactor_add(mz_reactor_t* rct, char* key, mz_reactor_fn fn) {
 
 void mz_reactor_remove(mz_reactor_t* rct, char* key) {
     zhash_delete(rct->events, key);
-}
-
-int key_A_fn(char* key, char* data) {
-   printf("KEY A => %s => %s\r\n", key, data);
-   return 0;
-}
-
-int key_B_fn(char* key, char* data) {
-   printf("KEY B => %s => %s\r\n", key, data);
-   return 0;
 }
 
 int main() {
