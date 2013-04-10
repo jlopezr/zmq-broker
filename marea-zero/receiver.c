@@ -17,7 +17,10 @@ char* discover(zctx_t* context, const char* key) {
     zstr_sendm(client, "GET");
     zstr_send(client, key);
     char* result = zstr_recv(client);
-    zsocket_destroy(context, &client);
+
+    //TODO deberiamos destruir el socket
+    //zsocket_destroy(context, &client);
+
     return result;
 }
 
@@ -165,6 +168,10 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
         now = zclock_time();
         zhash_foreach (services_found, process_services, &now);
     }
+
+    //Deberiamos destruirlo tambien
+    //zsocket_destroy(ctx, &sink);
+    //zsocket_destroy(ctx, &svc_changes);
     zbeacon_destroy (&client_beacon);
     zhash_destroy(&services_found);
 }
