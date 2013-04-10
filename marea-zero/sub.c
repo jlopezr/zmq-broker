@@ -8,13 +8,13 @@
 
 int main (int argc, char *argv [])
 {
-    zctx_t *context = zctx_new ();
-    void *subscriber = zsocket_new (context, ZMQ_SUB);
-
     if (argc < 2) {
         printf("usage: %s <subscription>\r\n",argv[0]);
         return -1;
     }
+    
+    zctx_t *context = zctx_new ();
+    void *subscriber = zsocket_new (context, ZMQ_SUB);
 
     start_discovery(context);
     char* location = NULL;
@@ -23,11 +23,15 @@ int main (int argc, char *argv [])
         printf("Discovering %s ...\r\n",argv[1]);
         sleep(1);
         location = discover(context, argv[1]);
-    } while(*location==0) ;
+	if(*location!=0) {
+	    break;
+	}
+	free(location);
+	location = NULL;
+    } while(!zctx_interrupted) ;
 
     if(zctx_interrupted) {
-	free(location);
-        return -1;
+        goto cleanup;
     }
 
     printf("Connecting to %s\r\n", location);
@@ -44,8 +48,11 @@ int main (int argc, char *argv [])
         { svc_changes, 0, ZMQ_POLLIN, 0}
     };
 
-    while (!zctx_interrupted) {
-        if(zmq_poll(items, 2, -1) <= 0) {
+    int i=0;
+    while (!zctx_interrupted && i < 10) {
+        i++;
+	
+	if(zmq_poll(items, 2, -1) <= 0) {
             break; // interrupted (-1) or no events (0)
         }
 
@@ -65,15 +72,24 @@ int main (int argc, char *argv [])
 	    char* topic = zstr_recv (svc_changes);
             char* url = zstr_recv (svc_changes);
 
+            //printf("TOPIC    <%s>\r\n", topic);         
+            //printf("URL      <%s>\r\n", url);         
+            //printf("LOCATION <%s>\r\n", location);         
+
             if(strcmp(topic,argv[1])==0) {
-                int rc = zsocket_disconnect(subscriber, location);
-                assert(rc==0);
-                if(*url!=0) {
+		
+		if(location!=NULL) {
+		    int rc = zsocket_disconnect(subscriber, location);
+                    assert(rc==0);
                     free(location);
+		    location = NULL;
+                }
+
+                if(*url!=0) {
                     location = url;
                     url = NULL;
                     zsocket_connect(subscriber, location);
-                }
+                }  
             }
             if(url!=NULL) {
                 free(url);
@@ -82,7 +98,11 @@ int main (int argc, char *argv [])
         }
     }
 
-    free(location);
+    cleanup:
+
+    if(location!=NULL) {
+    	free(location);
+    }
     printf("DESTROYING CTX\r\n");
     stop_discovery(context);
     zctx_destroy (&context);

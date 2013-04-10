@@ -24,19 +24,13 @@ char* discover(zctx_t* context, const char* key) {
     return result;
 }
 
-void free_discover_service_fn(void *data) {
-   discover_service_t* svc = (discover_service_t*)data;
-   if(svc->url!=NULL) {
-       free(svc->url);
-   }
-}
-
 void decode_frame_tcp(char* ipaddress, zframe_t* content, char** service_name, char** url) {
    char* data = (char*)zframe_data(content);
 
    int received_port = (data[0] << 8) + data[1];
    *service_name = data + 2;
    asprintf(url,"tcp://%s:%d", ipaddress, received_port);
+   //TODO esta la deberiamos liberar en algun sitio... la de decode_frame_url NO
 }
 
 void decode_frame_url(char* ipaddress, zframe_t* content, char** service_name, char** url) {
@@ -44,31 +38,44 @@ void decode_frame_url(char* ipaddress, zframe_t* content, char** service_name, c
    *service_name = data+1;
    int len = strlen(*service_name);
    *url = data + 2 + len;
-   len = strlen(*url);
+   //len = strlen(*url);
 }
 
 void decode_frame(char* ipaddress, zframe_t* content, char** service_name, char** url) {
 }
 
-void update_service(char* service_name, discover_service_t* svc) {
+void free_discover_service_fn(void *data) {
+   discover_service_t* svc = (discover_service_t*)data;
+   if(svc->url!=NULL) {
+       free(svc->url);
+       svc->url = NULL;
+   }
+   free(svc);
+}
+
+void update_service(char* service_name, discover_service_t** svc) {
    discover_service_t* current = zhash_lookup(services_found, service_name);
 
    if(current==NULL) {
-        zhash_insert(services_found, service_name, svc);
-        printf("Service %s has been discovered at %s\r\n", 
-		    service_name, svc->url );
+        zhash_insert(services_found, service_name, *svc);
+	zhash_freefn(services_found, service_name, free_discover_service_fn);
+	
+	printf("Service %s has been discovered at %s\r\n", 
+		    service_name, (*svc)->url );
 	zstr_sendm(svc_changes, service_name);
-	zstr_send(svc_changes, svc->url);
+	zstr_send(svc_changes, (*svc)->url);
    } else {
-	int lookup = strcmp(svc->url, current->url);
+	int lookup = strcmp((*svc)->url, current->url);
         if(lookup==0) {
-            current->time = svc->time;	
+            current->time = (*svc)->time;	
 	} else if(lookup<0) {
-            zhash_update(services_found, service_name, svc);
+            zhash_update(services_found, service_name, *svc);
+	    //TODO No se si hace falta
+	    zhash_freefn(services_found, service_name, free_discover_service_fn);
             printf("Service %s has been discovered at %s (old was %s)\r\n", 
-		    service_name, svc->url, current->url );
+		    service_name, (*svc)->url, current->url );
 	    zstr_sendm(svc_changes, service_name);
-	    zstr_send(svc_changes, svc->url);
+	    zstr_send(svc_changes, (*svc)->url);
 	} 
 	/* 
 	  else { // lookup > 0
@@ -76,6 +83,8 @@ void update_service(char* service_name, discover_service_t* svc) {
 		    service_name, svc->url, current->url );
 	} 
 	*/
+	free_discover_service_fn(*svc);
+	*svc = NULL;
    }
 }
 
@@ -84,17 +93,19 @@ int process_services(const char *key, void *item, void *argument) {
     //     lo elimino de la tabla
     //     aviso de que ya no esta detectado
 
-    long* value = (long*)item;
+    discover_service_t* value = (discover_service_t*)item;
     long* time = (long*)argument;
 
-    //printf("TIME %ld \r\n", *time);
-    //printf("KEY %s => %ld\r\n", key, *value);
+    //printf("TIME %ld\r\n", *time);
+    //printf("KEY  %s\r\n", key);
+    //printf("+URL %s\r\n", value->url);
+    //printf("+CLK %ld\r\n", value->time);
 
-    if(*time>*value+(BEACON_INTERVAL*BEACON_MISSED)) {
+    if( *time > (value->time + (BEACON_INTERVAL*BEACON_MISSED)) ) {
         printf("Service %s has dissapeared\r\n", key);
-        zhash_delete(services_found, key);
 	zstr_sendm(svc_changes, key);
 	zstr_send(svc_changes, "");
+        zhash_delete(services_found, key);
     }
 
     return 0;
@@ -170,15 +181,11 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
 
                 //  si ya existe actualizo su tiempo
                 //  sino la añado
-                long* tmp = malloc(sizeof(long));
-                *tmp = zclock_time();
-                int num_items = zhash_size(services_found);
-
 		discover_service_t* svc = malloc(sizeof(discover_service_t));
 		svc->time = zclock_time();
 		svc->url = strdup(url);
                 
-		update_service(service_name, svc);
+		update_service(service_name, &svc);
 
                 zframe_destroy (&content);
                 free (ipaddress);
