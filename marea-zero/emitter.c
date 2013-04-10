@@ -22,6 +22,7 @@ void publish_service(zctx_t* ctx, const char* service_name, int port_nbr) {
     service_beacon = zbeacon_new (9999);
     zbeacon_set_interval (service_beacon, BEACON_INTERVAL);
     zbeacon_publish (service_beacon, frame, len);
+    free(frame);
 }
 
 const char* get_hostname(zctx_t* ctx) {

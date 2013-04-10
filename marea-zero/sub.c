@@ -77,6 +77,7 @@ int main (int argc, char *argv [])
         }
     }
 
+    free(location);
     printf("DESTROYING CTX\r\n");
     stop_discovery(context);
     zctx_destroy (&context);
