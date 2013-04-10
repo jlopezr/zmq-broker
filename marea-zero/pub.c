@@ -10,6 +10,7 @@ int main (int argc, char *argv [])
 {
     zctx_t *context = zctx_new ();
     void *publisher = zsocket_new (context, ZMQ_PUB);
+    char* url; 
     int port_nbr = 0;
 
     if (argc < 3) {
@@ -18,12 +19,13 @@ int main (int argc, char *argv [])
     }
     if (strcmp(argv[2], "--tcp") == 0) {
         port_nbr = zsocket_bind (publisher, "tcp://*:*");
-	printf("Connecting to tcp://*:%d\r\n", port_nbr);
+	printf("Listening on tcp://*:%d\r\n", port_nbr);
+        publish_service_tcp(context, argv[1], port_nbr);	
     } else if(strcmp(argv[2], "--ipc") == 0) {
-	char* url; 
 	asprintf(&url, "ipc://%s", argv[1]);
 	printf("Listening on %s\r\n", url);
 	zsocket_bind (publisher, url);
+	publish_service_url(context, argv[1], url);
 	free(url);
     } else {
         printf("option %s not understood\r\n", argv[2]);
@@ -32,8 +34,6 @@ int main (int argc, char *argv [])
 
     //  Ensure subscriber connection has time to complete
     sleep (1);
-
-    publish_service(context, argv[1], port_nbr);
 
     //  Send one update per second
     int i = 0;

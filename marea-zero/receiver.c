@@ -31,6 +31,25 @@ void free_discover_service_fn(void *data) {
    }
 }
 
+void decode_frame_tcp(char* ipaddress, zframe_t* content, char** service_name, char** url) {
+   char* data = (char*)zframe_data(content);
+
+   int received_port = (data[0] << 8) + data[1];
+   *service_name = data + 2;
+   asprintf(url,"tcp://%s:%d", ipaddress, received_port);
+}
+
+void decode_frame_url(char* ipaddress, zframe_t* content, char** service_name, char** url) {
+   char* data = (char*)zframe_data(content);
+   *service_name = data+1;
+   int len = strlen(*service_name);
+   *url = data + 2 + len;
+   len = strlen(*url);
+}
+
+void decode_frame(char* ipaddress, zframe_t* content, char** service_name, char** url) {
+}
+
 void update_service(char* service_name, discover_service_t* svc) {
    discover_service_t* current = zhash_lookup(services_found, service_name);
 
@@ -112,7 +131,7 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
             char* func= zstr_recv(sink);
             char* data = zstr_recv(sink);
 	    char* result;
-	    //printf("SERVER FUNC: %s\r\n", func);
+	    //printf("SERVER FUNC: %s(%s)\r\n", func, data);
 	    if(strcmp(func,"GET")==0) {
 		discover_service_t* svc = zhash_lookup(services_found, data);
 		if(svc!=NULL) {
@@ -125,6 +144,7 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
 	    } else {
 	        assert(0 && "FUNC NOT KNOWN!");
 	    }
+	    //printf("SERVER RES: [%s]\r\n", result);
 	    zstr_send(sink, result);
             free(func);
 	    free(data);
@@ -135,15 +155,17 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
 
             //recibo con timeout
             char *ipaddress = zstr_recv (zbeacon_pipe (client_beacon));
+            char* service_name;
+	    char* url;
 
             //si hay trama la proceso, i.e
             if (ipaddress) {
                 zframe_t *content = zframe_recv (zbeacon_pipe (client_beacon));
-                int received_port = (zframe_data (content) [0] << 8)
-                                    +  zframe_data (content) [1];
-                char* service_name = ((char*)content)+2;
+
+		decode_frame_url(ipaddress, content, &service_name, &url);
+
                 //printf("IP   DETECTED %s\r\n", ipaddress);
-                //printf("PORT DETECTED %d\r\n", received_port);
+                //printf("URL DETECTED %s\r\n", url);
                 //printf("SVC  DETECTED %s\r\n", service_name);
 
                 //  si ya existe actualizo su tiempo
@@ -154,14 +176,13 @@ void discovery(void* args, zctx_t* ctx, void* pipe) {
 
 		discover_service_t* svc = malloc(sizeof(discover_service_t));
 		svc->time = zclock_time();
-		asprintf(&(svc->url),"tcp://%s:%d", ipaddress, received_port);
-
-                update_service(service_name, svc);
+		svc->url = strdup(url);
+                
+		update_service(service_name, svc);
 
                 zframe_destroy (&content);
                 free (ipaddress);
             }
-
         }
 
         //recorro todos los elementos del hash

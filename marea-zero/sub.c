@@ -23,7 +23,12 @@ int main (int argc, char *argv [])
         printf("Discovering %s ...\r\n",argv[1]);
         sleep(1);
         location = discover(context, argv[1]);
-    } while(*location==0);
+    } while(*location==0) ;
+
+    if(zctx_interrupted) {
+	free(location);
+        return -1;
+    }
 
     printf("Connecting to %s\r\n", location);
     zsocket_connect (subscriber, location);
