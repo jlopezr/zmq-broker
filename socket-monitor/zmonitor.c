@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <czmq.h>
-#include <pthread.h>
 #include <string.h>
 #include <assert.h>
 
@@ -33,7 +32,7 @@ static int read_msg(void* s, zmq_event_t* event, char* ep)
 }
 
 // REP socket monitor thread
-static void *rep_socket_monitor (void *ctx)
+static void rep_socket_monitor (void *args, zctx_t *ctx, void *pipe)
 {
     zmq_event_t event;
     static char addr[1025] ;
@@ -41,11 +40,12 @@ static void *rep_socket_monitor (void *ctx)
 
     printf("starting zmonitor...\n");
 
-    void *s = zmq_socket (ctx, ZMQ_PAIR);
+    void *s = zsocket_new(ctx, ZMQ_PAIR);
     assert (s);
 
-    rc = zmq_connect (s, "inproc://monitor.rep");
+    rc = zsocket_connect (s, "inproc://monitor.rep");
     assert (rc == 0);
+
     while (!read_msg(s, &event, addr)) {
         switch (event.event) {
         case ZMQ_EVENT_LISTENING:
@@ -70,8 +70,8 @@ static void *rep_socket_monitor (void *ctx)
             break;
         }
     }
-    zmq_close (s);
-    return NULL;
+    //zsocket_destroy(ctx, &s);
+    zsocket_disconnect(s, "inproc://monitor.rep");
 }
 
 int main()
@@ -90,8 +90,8 @@ int main()
     int rc = zmq_socket_monitor (rep, "inproc://monitor.rep", ZMQ_EVENT_ALL);
     assert (rc == 0);
 
-    rc = pthread_create (&thread, NULL, rep_socket_monitor, zctx_underlying(ctx) );
-    assert (rc == 0);
+    void *pipe = zthread_fork (ctx, rep_socket_monitor, NULL);
+    assert (pipe);
 
     rc = zsocket_bind(rep, "tcp://127.0.0.1:6666" );
     assert (rc == 6666);
