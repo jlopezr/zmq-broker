@@ -99,7 +99,7 @@ void func2(void *data) {
     printf("FUNC2 [%s]\r\n", str);
 }
 
-int main() {
+int main () {
    event_queue_t* queue = event_queue_new();
    
    printf("TEST 1\r\n");
