@@ -31,7 +31,7 @@ int main (int argc, char *argv [])
     int i = 0;
     while (!zctx_interrupted) {
         sleep (1);
-        zstr_sendm (publisher, argv[1]); //TODO is ZMQ_SNDMORE needed?
+        zstr_sendm (publisher, argv[1]);
         zstr_send (publisher, "VALUE A2 = %03d", i++);
     }
     zctx_destroy (&context);
