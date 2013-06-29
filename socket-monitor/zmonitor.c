@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <czmq.h>
+#include <zmq_utils.h>
 #include <string.h>
 #include <assert.h>
 
@@ -74,7 +75,7 @@ static void rep_socket_monitor (void *args, zctx_t *ctx, void *pipe)
     zsocket_disconnect(s, "inproc://monitor.rep");
 }
 
-int main()
+int main ()
 {
     pthread_t thread;
 

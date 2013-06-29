@@ -14,7 +14,7 @@ int func2(const char *key, void *item, void *argument) {
     return 0;
 }
 
-int main(void) {
+int main (void) {
     zhash_t* h = zhash_new();
 
     void* d1 = malloc(sizeof(int));

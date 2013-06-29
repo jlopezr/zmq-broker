@@ -1,7 +1,7 @@
 #include <czmq.h>
 #include "constants.h"
 
-int main(int argc, char** argv) {
+int main (int argc, char** argv) {
 
     //  Basic test: create a service and announce it
     zctx_t *ctx = zctx_new ();

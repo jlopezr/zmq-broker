@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <zmq.h>
+#include <zmq_utils.h>
 #include <pthread.h>
 #include <string.h>
 #include <assert.h>
@@ -74,7 +75,7 @@ static void *rep_socket_monitor (void *ctx)
     return NULL;
 }
 
-int main()
+int main ()
 {
     const char* addr = "tcp://127.0.0.1:6666" ;
     pthread_t thread ;

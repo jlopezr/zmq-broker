@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     long long n = ((uint)ts.tv_sec)*1000000000LL;
     n = n + ((uint)ts.tv_nsec);
 
-    printf("TOTAL %lu\n", n);
+    printf("TOTAL %lld\n", n);
 
     return 0;
 }

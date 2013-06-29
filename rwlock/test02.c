@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "check.h"
 
 pthread_rwlock_t       rwlock = PTHREAD_RWLOCK_INITIALIZER;
@@ -12,41 +13,42 @@ void *wrlockThread(void *arg)
   int             count=0;
 
   printf("%.8x: Entered thread, getting write lock\n",
-         pthread_self());
+         (unsigned int)pthread_self());
   Retry:
   rc = pthread_rwlock_trywrlock(&rwlock);
   if (rc == EBUSY) {
     if (count >= 10) {
       printf("%.8x: Retried too many times, failure!\n",
-             pthread_self());
+             (unsigned int)pthread_self());
       exit(EXIT_FAILURE);
     }
 
     ++count;
     printf("%.8x: Go off an do other work, then RETRY...\n",
-           pthread_self());
+           (unsigned int)pthread_self());
     sleep(1);
     goto Retry;
   }
   compResults("pthread_rwlock_trywrlock() 1\n", rc);
-  printf("%.8x: Got the write lock\n", pthread_self());
+  printf("%.8x: Got the write lock\n", 
+	  (unsigned int)pthread_self());
 
   sleep(2);
 
   printf("%.8x: Unlock the write lock\n",
-         pthread_self());
+         (unsigned int)pthread_self());
   rc = pthread_rwlock_unlock(&rwlock);
   compResults("pthread_rwlock_unlock()\n", rc);
 
   printf("%.8x: Secondary thread complete\n",
-         pthread_self());
+         (unsigned int)pthread_self());
   return NULL;
 }
 
 int main (int argc, char **argv)
 {
-  int                   rc=0;
-  pthread_t             thread, thread2;
+  int rc=0;
+  pthread_t thread, thread2;
 
   printf("Enter Testcase - %s\n", argv[0]);
 

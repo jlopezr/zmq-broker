@@ -24,7 +24,7 @@ int process_services(const char *key, void *item, void *argument) {
 }
 
 
-int main(void) {
+int main (void) {
     static long now = 0;
 
     //  Basic test: create a service and announce it

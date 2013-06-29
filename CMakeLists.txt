@@ -23,3 +23,7 @@ add_subdirectory(marea-zero)
 add_subdirectory(reactor)
 add_subdirectory(socket-monitor)
 add_subdirectory(event-queue)
+add_subdirectory(nanoseconds)
+add_subdirectory(rwlock)
+add_subdirectory(zerocopy)
+

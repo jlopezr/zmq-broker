@@ -13,3 +13,5 @@ add_executable(mz.sub sub.c)
 set_target_properties(mz.sub PROPERTIES OUTPUT_NAME sub)
 target_link_libraries(mz.sub ${ZEROMQ_LIBRARIES})
 target_link_libraries(mz.sub ${CZEROMQ_LIBRARIES})
+
+add_executable(ifaddress ifaddress.c)
