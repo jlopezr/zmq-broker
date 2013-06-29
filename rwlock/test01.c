@@ -38,7 +38,7 @@ void *rdlockThread(void *arg)
   return NULL;
 }
 
-int main(int argc, char **argv)
+int main (int argc, char **argv)
 {
   int                   rc=0;
   pthread_t             thread;

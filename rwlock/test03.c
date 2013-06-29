@@ -41,7 +41,7 @@ void *wrlockThread(void *arg)
 
 
 
-int main(int argc, char **argv)
+int main (int argc, char **argv)
 {
   int                   rc=0;
   pthread_t             thread, thread1;
