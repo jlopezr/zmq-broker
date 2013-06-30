@@ -8,43 +8,23 @@ int main (int argc, char *argv [])
 {
     zctx_t *context = zctx_new ();
     void *subscriber = zsocket_new (context, ZMQ_SUB);
+    printf("Listening on tcp://*:5556\r\n");
+    zsocket_bind (subscriber, "tcp://*:5556");
+    zsocket_set_subscribe (subscriber, "TEST");
 
-    if (argc < 3) {
-       printf("usage: %s <subscription> [--broker|--local|<zmq port>]\r\n",argv[0]);
-       return 1;
-    }
-    if (strcmp(argv[2], "--broker") == 0) {
-//	printf("Connecting to tcp://localhost:5558 (BROKER)\r\n");
-        zsocket_connect (subscriber, "tcp://localhost:5558");
-    } else if (strcmp(argv[2], "--local") == 0) {
-	printf("Connecting to tcp://localhost:5556 (LOCAL)\r\n");
-        zsocket_connect (subscriber, "tcp://localhost:5556");
-    } else {
-	printf("Connecting to %s\r\n", argv[2]);
-        zsocket_connect (subscriber, argv[2]);
-    }
+    int total_count = 1000000; 
+    int message_size = 1024;
 
     int count = 0;
-
-    //srandom ((unsigned) time (NULL));
-    //char subscription [5];
-    //sprintf (subscription, "%03d", randof (1000));
-    //zsocket_set_subscribe (subscriber, subscription);
-    zsocket_set_subscribe (subscriber, argv[1]);
-    //printf("Subscribed to %s\r\n",argv[1]);
-    while (true) {
-        char *topic = zstr_recv (subscriber);
-        if (!topic)
-            break;
-        char *data = zstr_recv (subscriber);
-        assert (streq (topic, argv[1]));
-	//puts (data);
-	//if((count%100)==0) {
-	//    printf("OK\r\n");
-	//}
+    while (count < total_count && !zctx_interrupted) {
+	//printf("Receiving...\r\n");
+        zmsg_t* msg = zmsg_recv(subscriber);
+        zframe_t* topic_frame = zmsg_first(msg);
+        zframe_t* data_frame = zmsg_next(msg);
+        assert(zframe_size(topic_frame)==4);
+	assert(zframe_size(data_frame)==message_size);
+	zmsg_destroy(&msg);
 	count++;
-        free (topic);
-        free (data);
     }
     zctx_destroy (&context);
     return 0;
