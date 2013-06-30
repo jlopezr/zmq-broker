@@ -10,7 +10,9 @@ int main (int argc, char *argv [])
     printf("Connecting to tcp://localhost:5556\r\n");
     zsocket_connect (publisher, "tcp://localhost:5556");
     
-    int total_count = 100; 
+    zctx_set_linger(context, 1000);
+    
+    int total_count = 100000; 
     int message_size = 1024;
     void* data;
     data = malloc(message_size);
@@ -21,7 +23,6 @@ int main (int argc, char *argv [])
     printf("Waiting for subscriber.\r\n");
     zmsg_t* connection = zmsg_recv(publisher);
     zmsg_destroy(&connection);
-    zclock_sleep(1000);
     printf("Subscriber connected!\r\n");
 
     int i = 0;
@@ -35,10 +36,9 @@ int main (int argc, char *argv [])
 	zmsg_add (msg, data_frame);
 	zmsg_send (&msg, publisher);
 	i++;
-	printf("Count %d\r\n", i);
+	//printf("Count %d\r\n", i);
     }
 
-    zctx_set_linger(context, 1000);
     zctx_destroy (&context);
     return 0;
 }

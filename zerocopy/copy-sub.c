@@ -2,6 +2,7 @@
 //  Subscribes to one random topic and prints received messages
 
 #include "czmq.h"
+#include "zmq_utils.h"
 #include <stdlib.h>
 
 int main (int argc, char *argv [])
@@ -12,10 +13,11 @@ int main (int argc, char *argv [])
     zsocket_bind (subscriber, "tcp://*:5556");
     zsocket_set_subscribe (subscriber, "TEST");
 
-    int total_count = 100; 
+    int total_count = 100000; 
     int message_size = 1024;
 
     int count = 0;
+    void* watch = zmq_stopwatch_start ();
     while (count < total_count && !zctx_interrupted) {
 	//printf("Receiving...\r\n");
         zmsg_t* msg = zmsg_recv(subscriber);
@@ -31,6 +33,10 @@ int main (int argc, char *argv [])
 	count++;
         //printf("Count %d\r\n", count);
     }
+    unsigned long elapsed = zmq_stopwatch_stop (watch);
+    double latency = (double) elapsed / (total_count * 2);
+    printf ("average latency: %.3f [us]\n", (double) latency);
+    
     zctx_destroy (&context);
     return 0;
 }
