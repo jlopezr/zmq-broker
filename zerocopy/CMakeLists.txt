@@ -20,4 +20,12 @@ add_executable(zerocopy-sub zerocopy-sub.c)
 target_link_libraries(zerocopy-sub ${ZEROMQ_LIBRARIES})
 target_link_libraries(zerocopy-sub ${CZEROMQ_LIBRARIES})
 
+add_executable(local_lat local_lat.c)
+target_link_libraries(local_lat ${ZEROMQ_LIBRARIES})
+target_link_libraries(local_lat ${CZEROMQ_LIBRARIES})
+
+add_executable(remote_lat remote_lat.c)
+target_link_libraries(remote_lat ${ZEROMQ_LIBRARIES})
+target_link_libraries(remote_lat ${CZEROMQ_LIBRARIES})
+
 
