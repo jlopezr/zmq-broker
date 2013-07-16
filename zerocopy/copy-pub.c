@@ -1,23 +1,26 @@
-//  Pathological publisher
-//  Sends out 1,000 topics and then one random update per second
-
 #include "czmq.h"
 
 int main (int argc, char *argv [])
 {
+   if (argc != 4) {
+        printf ("usage: copy-pub <bind-to> <message-size> "
+                "<roundtrip-count>\n");
+        return 1;
+    }
+    char* bind_to = argv [1];
+    long message_size = atoi (argv [2]);
+    long roundtrip_count = atoi (argv [3]);
+
     zctx_t *context = zctx_new ();
     void *publisher = zsocket_new (context, ZMQ_XPUB);
-    printf("Connecting to tcp://localhost:5556\r\n");
-    zsocket_connect (publisher, "tcp://localhost:5556");
-    
+    printf("Connecting to %s\r\n", bind_to);
+    zsocket_bind (publisher, bind_to);
     zctx_set_linger(context, 1000);
-    
-    int total_count = 100000; 
-    int message_size = 1024;
-    void* data;
-    data = malloc(message_size);
-    bzero(data, message_size);
-    int* pointer= (int*)data;
+  
+    zsocket_set_sndhwm(publisher, 0);
+
+    int hwm = zsocket_sndhwm(publisher);
+    printf("HMW=%d\r\n", hwm);
 
     //Wait for sub connection
     printf("Waiting for subscriber.\r\n");
@@ -26,17 +29,20 @@ int main (int argc, char *argv [])
     printf("Subscriber connected!\r\n");
 
     int i = 0;
-    while (i<total_count && !zctx_interrupted) {
-        *pointer = i;
-        //printf("Sending...\r\n");
+    while (i<roundtrip_count && !zctx_interrupted) {
+        void* data = malloc(message_size);
+        bzero(data, message_size);
+	sprintf(data, "%d", i);
+        
         zmsg_t* msg = zmsg_new();
-	zframe_t* topic_frame = zframe_new("TEST", 4);
-        zframe_t* data_frame = zframe_new(data, 1024);
-	zmsg_add (msg, topic_frame);
-	zmsg_add (msg, data_frame);
+	zmsg_addstr(msg, "TEST", 4);	
+        zmsg_addmem(msg, data, message_size);
+
+	//zmsg_dump(msg);
 	zmsg_send (&msg, publisher);
 	i++;
-	//printf("Count %d\r\n", i);
+	free(data);
+	zclock_sleep(1);
     }
 
     zctx_destroy (&context);
