@@ -28,10 +28,14 @@ int main (int argc, char *argv [])
     int total_count = 100000; 
 
     int count = 0;
-    void* watch = zmq_stopwatch_start ();
+    void* watch = NULL;
     while (count < roundtrip_count && !zctx_interrupted) {
         zmsg_t* msg = zmsg_recv(subscriber);
 	//zmsg_dump(msg);
+
+	if(watch == NULL) {
+            watch = zmq_stopwatch_start ();
+	}
 
 	zframe_t* topic_frame = zmsg_first(msg);
         zframe_t* data_frame = zmsg_next(msg);
@@ -49,7 +53,7 @@ int main (int argc, char *argv [])
 	count++;
     }
     unsigned long elapsed = zmq_stopwatch_stop (watch);
-    double latency = (double) elapsed / (roundtrip_count * 2);
+    double latency = (double) elapsed / (roundtrip_count-1);
     printf ("average latency: %.3f [us]\n", (double) latency);
     
     zctx_destroy (&context);

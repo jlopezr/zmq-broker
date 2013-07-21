@@ -21,7 +21,7 @@ int main (int argc, char *argv [])
     int rc;
     int i;
     zmq_msg_t msg;
-    void *watch;
+    void *watch = NULL;
     unsigned long elapsed;
     double latency;
     
@@ -87,15 +87,22 @@ int main (int argc, char *argv [])
         return -1;
     }
     
-    watch = zmq_stopwatch_start ();
-    
+     
     for (i = 0; i != roundtrip_count; i++) {
+ 
+
         //printf("RECEIVING %d\r\n", i);
         rc = zmq_msg_recv(&msg, s, 0);
         if (rc < 0) {
             printf ("error in zmq_msg_recv: %s\n", zmq_strerror (errno));
             return -1;
         }
+
+        // Start timer after the first message (we don't want to take the delay between client and server)
+	if(watch == NULL) {
+           watch = zmq_stopwatch_start ();
+	}
+
         //printf("TOPIC SIZE %zd\r\n", zmq_msg_size(&msg));
         if (zmq_msg_size (&msg) != 5) {
             printf ("message of incorrect size received (*1*)\n");
@@ -126,6 +133,7 @@ int main (int argc, char *argv [])
             int n = atoi(zmq_msg_data(&msg));
             if(n!=i) {
                 printf("EXPECTED %d - RECEIVED %d \r\n", i, n);
+		i = n;
                 //exit(-1);
             }
         }
@@ -147,7 +155,7 @@ int main (int argc, char *argv [])
         return -1;
     }
     
-    latency = (double) elapsed / (roundtrip_count);
+    latency = (double) elapsed / (roundtrip_count-1); // discard first message
     
     printf ("message size: %d [B]\n", (int) message_size);
     printf ("roundtrip count: %d\n", (int) roundtrip_count);

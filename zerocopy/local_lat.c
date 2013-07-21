@@ -55,9 +55,17 @@ int main (int argc, char *argv [])
         printf("CAUTION: Message size too small to check for dropped packets\r\n");
         check_dropped_packets = 0;
     }
-    
+
+    // set PUB_RELIABLE
+    int pub_reliable = 1;
+    rc = zmq_setsockopt(s, ZMQ_PUB_RELIABLE, &pub_reliable, sizeof(pub_reliable));
+    if (rc != 0) {
+        printf ("error in zmq_setsockopt (ZMQ_PUB_RELIABLE): %s\n", zmq_strerror (errno));
+        return -1;
+    }
+
     // set infinity HWM
-    int hwm = 0;
+    int hwm = 1000;
     rc = zmq_setsockopt(s, ZMQ_SNDHWM, &hwm , sizeof(hwm));
     if (rc != 0) {
         printf ("error in zmq_setsockopt (ZMQ_SNDHWM): %s\n", zmq_strerror (errno));

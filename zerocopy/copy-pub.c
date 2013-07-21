@@ -1,4 +1,5 @@
 #include "czmq.h"
+#include "zmq.h"
 
 int main (int argc, char *argv [])
 {
@@ -13,14 +14,22 @@ int main (int argc, char *argv [])
 
     zctx_t *context = zctx_new ();
     void *publisher = zsocket_new (context, ZMQ_XPUB);
-    printf("Connecting to %s\r\n", bind_to);
-    zsocket_bind (publisher, bind_to);
+    
     zctx_set_linger(context, 1000);
-  
-    zsocket_set_sndhwm(publisher, 0);
-
+    zsocket_set_sndhwm(publisher, 1000);
     int hwm = zsocket_sndhwm(publisher);
     printf("HMW=%d\r\n", hwm);
+
+    // set PUB_RELIABLE
+    int pub_reliable = 1;
+    int rc = zmq_setsockopt(publisher, ZMQ_PUB_RELIABLE, &pub_reliable, sizeof(pub_reliable));
+    if (rc != 0) {
+        printf ("error in zmq_setsockopt (ZMQ_PUB_RELIABLE): %s\n", zmq_strerror (errno));
+        return -1;
+    }
+
+    printf("Connecting to %s\r\n", bind_to);
+    zsocket_bind (publisher, bind_to);
 
     //Wait for sub connection
     printf("Waiting for subscriber.\r\n");
@@ -42,7 +51,6 @@ int main (int argc, char *argv [])
 	zmsg_send (&msg, publisher);
 	i++;
 	free(data);
-	zclock_sleep(1);
     }
 
     zctx_destroy (&context);
