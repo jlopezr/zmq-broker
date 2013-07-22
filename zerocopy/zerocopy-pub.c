@@ -1,44 +1,67 @@
-//  Pathological publisher
-//  Sends out 1,000 topics and then one random update per second
-
 #include "czmq.h"
+#include "zmq.h"
 
-void free_frame(void *data, void *arg) {
-  free(data);
+void my_free (void *data, void *hint)
+{
+    free (data);
 }
 
-void free_static_frame(void *data, void *arg) {
-  //DO NOTHING 
-}
-	
 int main (int argc, char *argv [])
 {
+   if (argc != 4) {
+        printf ("usage: copy-pub <bind-to> <message-size> "
+                "<roundtrip-count>\n");
+        return 1;
+    }
+    char* bind_to = argv [1];
+    long message_size = atoi (argv [2]);
+    long roundtrip_count = atoi (argv [3]);
+
     zctx_t *context = zctx_new ();
-    void *publisher = zsocket_new (context, ZMQ_PUB);
-    printf("Connecting to tcp://localhost:5556\r\n");
-    zsocket_connect (publisher, "tcp://localhost:5556");
+    void *publisher = zsocket_new (context, ZMQ_XPUB);
     
-    int total_count = 1000000; 
-    int message_size = 1024;
-    void* data;
-    data = malloc(message_size);
-    bzero(data, message_size);
-    int* pointer= (int*)data;
+    zctx_set_linger(context, 1000);
+    zsocket_set_sndhwm(publisher, 1000);
+    int hwm = zsocket_sndhwm(publisher);
+    printf("HMW=%d\r\n", hwm);
+
+    // set PUB_RELIABLE
+    int pub_reliable = 1;
+    int rc = zmq_setsockopt(publisher, ZMQ_PUB_RELIABLE, &pub_reliable, sizeof(pub_reliable));
+    if (rc != 0) {
+        printf ("error in zmq_setsockopt (ZMQ_PUB_RELIABLE): %s\n", zmq_strerror (errno));
+        return -1;
+    }
+
+    printf("Connecting to %s\r\n", bind_to);
+    zsocket_bind (publisher, bind_to);
+
+    //Wait for sub connection
+    printf("Waiting for subscriber.\r\n");
+    zmsg_t* connection = zmsg_recv(publisher);
+    zmsg_destroy(&connection);
+    printf("Subscriber connected!\r\n");
 
     int i = 0;
-    while (i<total_count && !zctx_interrupted) {
-        *pointer = i;
-	//printf("Sending...\r\n");
+    while (i<roundtrip_count && !zctx_interrupted) {
+        void* data = malloc(message_size);
+        bzero(data, message_size);
+	sprintf(data, "%d", i);
+
+	//zframe_t * zframe_new_zero_copy (void *data, size_t size, zframe_free_fn *free_fn, void *arg);
+        zframe_t* frame = zframe_new_zero_copy(data, message_size, my_free, NULL);
+
         zmsg_t* msg = zmsg_new();
-        zframe_t* topic_frame = zframe_new_zero_copy("TEST", 4, free_static_frame, NULL); 
-        zframe_t* data_frame = zframe_new_zero_copy(data, 1024, free_static_frame, NULL); //DO NOT FREE BUFFER ALWAYS USING THE SAME
-	zmsg_add (msg, topic_frame);
-	zmsg_add (msg, data_frame);
+	zmsg_addstr(msg, "TEST", 4);	
+        //zmsg_addmem(msg, data, message_size);
+	zmsg_add(msg, frame);
+
+	//zmsg_dump(msg);
 	zmsg_send (&msg, publisher);
 	i++;
+	//free(data);
     }
-    
-    zclock_sleep(1000);
+
     zctx_destroy (&context);
     return 0;
 }

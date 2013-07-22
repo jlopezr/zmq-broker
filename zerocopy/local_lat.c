@@ -17,6 +17,11 @@ unsigned GetNumberOfDigits (unsigned i)
     return i > 0 ? (int) log10 ((double) i) + 1 : 1;
 }
 
+void my_free (void *data, void *hint)
+{
+    free (data);
+}
+
 int main (int argc, char *argv [])
 {
     const char *bind_to;
@@ -110,16 +115,18 @@ int main (int argc, char *argv [])
     for (i = 0; i != roundtrip_count; i++) {
         //PREPARE MSGS
         ZMQ_PREPARE_STRING(topic, "TEST", 4);
+       
+        void* buffer = malloc(message_size);
+        memset (buffer, 0, message_size);
         
-        rc = zmq_msg_init_size (&msg, message_size);
-        if (rc != 0) {
-            printf ("error in zmq_msg_init_size: %s\n", zmq_strerror (errno));
-            return -1;
+	if(check_dropped_packets) {
+            sprintf(buffer, "%d", i);
         }
-        memset (zmq_msg_data (&msg), 0, message_size);
-        
-        if(check_dropped_packets) {
-            sprintf(zmq_msg_data(&msg), "%d", i);
+
+        rc = zmq_msg_init_data (&msg, buffer, message_size, my_free, NULL);
+        if (rc != 0) {
+            printf ("error in zmq_msg_init_data: %s\n", zmq_strerror (errno));
+            return -1;
         }
         
         rc = zmq_msg_send (&topic, s, ZMQ_SNDMORE);
