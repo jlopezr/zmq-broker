@@ -88,7 +88,7 @@ int main (int argc, char *argv [])
     }
     
      
-    for (i = 0; i != roundtrip_count; i++) {
+    for (i = 0; i < roundtrip_count; i++) {
  
 
         //printf("RECEIVING %d\r\n", i);
@@ -166,7 +166,9 @@ int main (int argc, char *argv [])
         printf ("error in zmq_close: %s\n", zmq_strerror (errno));
         return -1;
     }
-    
+
+    sleep(10);
+
     rc = zmq_term (ctx);
     if (rc != 0) {
         printf ("error in zmq_term: %s\n", zmq_strerror (errno));
