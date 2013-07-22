@@ -1,6 +1,11 @@
 #include "czmq.h"
 #include "zmq.h"
 
+unsigned GetNumberOfDigits (unsigned i)
+{
+    return i > 0 ? (int) log10 ((double) i) + 1 : 1;
+}
+
 int main (int argc, char *argv [])
 {
    if (argc != 4) {
@@ -11,6 +16,12 @@ int main (int argc, char *argv [])
     char* bind_to = argv [1];
     long message_size = atoi (argv [2]);
     long roundtrip_count = atoi (argv [3]);
+
+    char check_dropped_packets = 1;
+    if(message_size < GetNumberOfDigits(roundtrip_count)) {
+        printf("CAUTION: Message size too small to check for dropped packets\r\n");
+        check_dropped_packets = 0;
+    }
 
     zctx_t *context = zctx_new ();
     void *publisher = zsocket_new (context, ZMQ_XPUB);
@@ -41,8 +52,10 @@ int main (int argc, char *argv [])
     while (i<roundtrip_count && !zctx_interrupted) {
         void* data = malloc(message_size);
         bzero(data, message_size);
-	sprintf(data, "%d", i);
-        
+        if(check_dropped_packets) {
+	    sprintf(data, "%d", i);
+        }
+
         zmsg_t* msg = zmsg_new();
 	zmsg_addstr(msg, "TEST", 4);	
         zmsg_addmem(msg, data, message_size);
