@@ -55,9 +55,9 @@ int main (int argc, char *argv [])
 
 	if(check_dropped_packets) {
 	    int i = atoi(zframe_data(data_frame));
-            if(n != i) {
-                printf("EXPECTED %d - RECEIVED %d \r\n", i, n);
-		i = n;
+            if(count != i) {
+                printf("EXPECTED %d - RECEIVED %d \r\n", i, count);
+		i = count;
                 //exit(-1);
             }
         }
