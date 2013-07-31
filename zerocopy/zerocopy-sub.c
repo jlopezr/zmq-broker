@@ -6,8 +6,8 @@ int main (int argc, char *argv [])
 {
 
     if (argc != 4) {
-        printf ("usage: copy-sub <connect-to> <message-size> "
-                "<roundtrip-count>\n");
+        printf ("usage: %s <connect-to> <message-size> "
+                "<roundtrip-count>\n", argv[0]);
         return 1;
     }
     char* connect_to = argv [1];

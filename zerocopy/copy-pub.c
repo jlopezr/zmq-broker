@@ -9,8 +9,8 @@ unsigned GetNumberOfDigits (unsigned i)
 int main (int argc, char *argv [])
 {
    if (argc != 4) {
-        printf ("usage: copy-pub <bind-to> <message-size> "
-                "<roundtrip-count>\n");
+        printf ("usage: %s <bind-to> <message-size> "
+                "<roundtrip-count>\n", argv[0]);
         return 1;
     }
     char* bind_to = argv [1];

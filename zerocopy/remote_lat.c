@@ -26,8 +26,8 @@ int main (int argc, char *argv [])
     double latency;
     
     if (argc != 4) {
-        printf ("usage: remote_lat <connect-to> <message-size> "
-                "<roundtrip-count>\n");
+        printf ("usage: %s <connect-to> <message-size> "
+                "<roundtrip-count>\n", argv[0]);
         return 1;
     }
     connect_to = argv [1];

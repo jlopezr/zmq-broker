@@ -35,8 +35,8 @@ int main (int argc, char *argv [])
     zmq_msg_t topic;
     
     if (argc != 4) {
-        printf ("usage: local_lat <bind-to> <message-size> "
-                "<roundtrip-count>\n");
+        printf ("usage: %s <bind-to> <message-size> "
+                "<roundtrip-count>\n", argv[0]);
         return 1;
     }
     bind_to = argv [1];
