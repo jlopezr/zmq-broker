@@ -31,6 +31,7 @@ int main (int argc, char *argv [])
     int hwm = zsocket_sndhwm(publisher);
     printf("HMW=%d\r\n", hwm);
 
+#ifdef ZMQ_PUB_RELIABLE
     // set PUB_RELIABLE
     int pub_reliable = 1;
     int rc = zmq_setsockopt(publisher, ZMQ_PUB_RELIABLE, &pub_reliable, sizeof(pub_reliable));
@@ -38,6 +39,7 @@ int main (int argc, char *argv [])
         printf ("error in zmq_setsockopt (ZMQ_PUB_RELIABLE): %s\n", zmq_strerror (errno));
         return -1;
     }
+#endif
 
     printf("Connecting to %s\r\n", bind_to);
     zsocket_bind (publisher, bind_to);

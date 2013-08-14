@@ -61,6 +61,7 @@ int main (int argc, char *argv [])
         check_dropped_packets = 0;
     }
 
+#ifdef ZMQ_PUB_RELIABLE
     // set PUB_RELIABLE
     int pub_reliable = 1;
     rc = zmq_setsockopt(s, ZMQ_PUB_RELIABLE, &pub_reliable, sizeof(pub_reliable));
@@ -68,6 +69,7 @@ int main (int argc, char *argv [])
         printf ("error in zmq_setsockopt (ZMQ_PUB_RELIABLE): %s\n", zmq_strerror (errno));
         return -1;
     }
+#endif
 
     // set infinity HWM
     int hwm = 1000;
