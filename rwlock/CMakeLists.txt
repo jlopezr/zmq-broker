@@ -15,3 +15,6 @@ target_link_libraries (test02 ${CMAKE_THREAD_LIBS_INIT} )
 
 add_executable(test03 test03.c)
 target_link_libraries (test03 ${CMAKE_THREAD_LIBS_INIT} )
+
+add_executable(create_pthreads create_pthreads.c)
+target_link_libraries (create_pthreads ${CMAKE_THREAD_LIBS_INIT} )
